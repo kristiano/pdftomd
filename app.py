@@ -1,51 +1,89 @@
 import streamlit as st
 import os
 import tempfile
+import time
 from leitor_pdf import converter_pdf_para_md
 
-st.set_page_config(page_title="PDF para Markdown", page_icon="📄")
+st.set_page_config(page_title="PDF para Markdown", page_icon="📄", layout="centered")
 
-st.title("Conversor de PDF para Markdown")
-st.write("Faça o upload de um arquivo PDF e converta para formato Markdown (.md).")
+st.title("📄 Conversor de PDF para Markdown")
+st.markdown("Transforme seus documentos PDF em texto formatado `.md` com visualização prévia e download simplificado.")
 
-uploaded_file = st.file_uploader("Escolha um arquivo PDF", type="pdf")
+st.divider()
+
+# Centraliza e melhora o visual do uploader
+uploaded_file = st.file_uploader("Arraste e solte ou clique para escolher um arquivo PDF", type="pdf")
 
 if uploaded_file is not None:
-    # Cria os recursos visuais de aguarde
-    with st.spinner("Processando o arquivo PDF, por favor aguarde..."):
-        # Salva o arquivo temporariamente pois a função leitor_pdf espera um caminho de arquivo
+    st.info(f"Arquivo selecionado: **{uploaded_file.name}**")
+    
+    # Adicionando botão que dispara a conversão para dar controle ao usuário
+    if st.button("🚀 Converter para .md", use_container_width=True, type="primary"):
+        
+        # Criação da barra de progresso visual
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        status_text.text("Preparando o ambiente e validando arquivo...")
+        progress_bar.progress(10)
+        time.sleep(0.3)
+        
+        # Salva o arquivo temporariamente
+        status_text.text("Carregando páginas do arquivo...")
+        progress_bar.progress(30)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
             tmp_file_path = tmp_file.name
+        
+        time.sleep(0.3)
+        status_text.text("Processando leitura com biblioteca PyMuPDF4LLM... (Isso pode levar alguns segundos)")
+        progress_bar.progress(50)
 
         try:
-            # Chama a função existente que converte o PDF
+            # Chama a função principal de conversão
             md_file_path = converter_pdf_para_md(tmp_file_path)
             
-            # Lê o conteúdo do arquivo gerado para disponibilizar para download
+            progress_bar.progress(80)
+            status_text.text("Organizando o documento em Markdown...")
+            
+            # Lê o conteúdo do arquivo Markdown gerado
             with open(md_file_path, "r", encoding="utf-8") as f:
                 md_content = f.read()
                 
-            st.success("Conversão concluída com sucesso!")
+            progress_bar.progress(100)
+            status_text.text("Pronto!")
+            time.sleep(0.5)
             
-            # Botão de download
+            # Limpa textos e barra pra não poluir a interface depois de baixar
+            progress_bar.empty()
+            status_text.empty()
+            
+            st.success("✅ Conversão concluída com sucesso!")
+            
             novo_nome_arquivo = uploaded_file.name.replace(".pdf", ".md")
+            
+            # Botão de download visualmente destacado
             st.download_button(
                 label="📥 Baixar Arquivo Markdown",
                 data=md_content,
                 file_name=novo_nome_arquivo,
-                mime="text/markdown"
+                mime="text/markdown",
+                use_container_width=True
             )
             
-            # Exibe uma preview do markdown na tela (opcional, até certo tamanho)
-            with st.expander("Pré-visualizar o conteúdo"):
+            st.divider()
+            
+            # Exibe uma preview do markdown na tela dentro de um container com rolagem (simulado com expander)
+            with st.expander("👀 Cique aqui para pré-visualizar o conteúdo (Preview)"):
                 st.markdown(md_content)
             
         except Exception as e:
-            st.error(f"Ocorreu um erro durante a conversão: {e}")
+            progress_bar.empty()
+            status_text.empty()
+            st.error(f"❌ Ocorreu um erro durante a conversão: {e}")
             
         finally:
-            # Limpa os arquivos temporários criados
+            # Serviço de limpeza dos temporários nos bastidores
             if os.path.exists(tmp_file_path):
                 os.remove(tmp_file_path)
             if 'md_file_path' in locals() and os.path.exists(md_file_path):
