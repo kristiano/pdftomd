@@ -1,3 +1,6 @@
 streamlit
 pymupdf
 pymupdf4llm
+markitdown
+requests
+markdown-pdf

@@ -2,94 +2,126 @@ import streamlit as st
 import os
 import tempfile
 import time
-from leitor_pdf import converter_pdf_para_md
+from leitor_pdf import Markdownify
 
-st.set_page_config(page_title="PDF para Markdown", page_icon="📄", layout="centered")
+st.set_page_config(page_title="Markdownify Universal", page_icon="📄", layout="centered")
 
-st.title("📄 Conversor de PDF para Markdown")
-st.markdown("Transforme seus documentos PDF em texto formatado `.md` com visualização prévia e download simplificado.")
+st.title("📄 Conversor Markdownify")
+st.markdown("Ferramenta inspirada no robusto ecossistema `markdownify-mcp`. Transforme **qualquer arquivo** (PDF, Word, Excel, Texto) ou **URLs** (Páginas e artigos) em texto formatado `.md`.")
 
 st.divider()
 
-# Centraliza e melhora o visual do uploader
-uploaded_file = st.file_uploader("Arraste e solte ou clique para escolher um arquivo PDF", type="pdf")
+# Instancia a engine principal
+markdownify = Markdownify()
 
-if uploaded_file is not None:
-    # Verificação de segurança adicional para o formato do arquivo
-    if not uploaded_file.name.lower().endswith('.pdf'):
-        st.error("⚠️ **Atenção:** Formato de arquivo não suportado! O aplicativo aceita apenas arquivos com a extensão **.pdf**.")
-        st.stop()
+# Seleção principal da ferramenta
+opcao = st.radio(
+    "Escolha a operação desejada:",
+    ("Converter PDF para Markdown", "Converter Markdown para PDF"),
+    horizontal=False
+)
 
-    st.info(f"Arquivo selecionado: **{uploaded_file.name}**")
+st.divider()
+
+if opcao == "Converter PDF para Markdown":
+    st.subheader("📄 Extrair Markdown de um PDF")
+    st.markdown("Faça o upload do seu arquivo PDF para extrair os textos e imagens formatadas.")
     
-    # Adicionando botão que dispara a conversão para dar controle ao usuário
-    if st.button("🚀 Converter para .md", use_container_width=True, type="primary"):
+    uploaded_pdf = st.file_uploader("Arraste e solte ou clique para escolher um arquivo .pdf", type=["pdf"])
+    
+    if uploaded_pdf is not None:
+        st.info(f"Arquivo carregado: **{uploaded_pdf.name}**")
         
-        # Criação da barra de progresso visual
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        status_text.text("Preparando o ambiente e validando arquivo...")
-        progress_bar.progress(10)
-        time.sleep(0.3)
-        
-        # Salva o arquivo temporariamente
-        status_text.text("Carregando páginas do arquivo...")
-        progress_bar.progress(30)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(uploaded_file.getvalue())
-            tmp_file_path = tmp_file.name
-        
-        time.sleep(0.3)
-        status_text.text("Processando leitura com biblioteca PyMuPDF4LLM... (Isso pode levar alguns segundos)")
-        progress_bar.progress(50)
-
-        try:
-            # Chama a função principal de conversão
-            md_file_path = converter_pdf_para_md(tmp_file_path)
+        if st.button("🚀 Converter para .md", use_container_width=True, type="primary"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
             
-            progress_bar.progress(80)
-            status_text.text("Organizando o documento em Markdown...")
-            
-            # Lê o conteúdo do arquivo Markdown gerado
-            with open(md_file_path, "r", encoding="utf-8") as f:
-                md_content = f.read()
+            try:
+                status_text.text("Preparando o ambiente e validando...")
+                progress_bar.progress(30)
                 
-            progress_bar.progress(100)
-            status_text.text("Pronto!")
-            time.sleep(0.5)
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                    tmp_file.write(uploaded_pdf.getvalue())
+                    tmp_file_path = tmp_file.name
+                
+                status_text.text("Lendo PDF e gerando imagens embutidas...")
+                progress_bar.progress(60)
+
+                md_content = markdownify.from_file(tmp_file_path)
+                source_name = os.path.splitext(uploaded_pdf.name)[0]
+                
+                progress_bar.progress(100)
+                status_text.text("Conversão concluída!")
+                time.sleep(0.5)
+                
+                progress_bar.empty()
+                status_text.empty()
+                
+                st.success("✅ Documento Markdown gerado com sucesso!")
+                
+                st.download_button(
+                    label="📥 Baixar Arquivo Markdown",
+                    data=md_content,
+                    file_name=f"{source_name}.md",
+                    mime="text/markdown",
+                    use_container_width=True
+                )
+                
+                st.divider()
+                with st.expander("👀 Ver arquivo convertido (Preview)"):
+                    st.markdown(md_content)
+                
+            except Exception as e:
+                progress_bar.empty()
+                status_text.empty()
+                st.error(f"❌ Erro durante a extração: {e}")
+            finally:
+                if 'tmp_file_path' in locals() and os.path.exists(tmp_file_path):
+                    os.remove(tmp_file_path)
+
+elif opcao == "Converter Markdown para PDF":
+    st.subheader("📝 Gerar PDF de um arquivo Markdown")
+    st.markdown("Faça o upload do documento `.md` que você deseja renderizar visualmente em formato de PDF.")
+    
+    uploaded_md = st.file_uploader("Arraste e solte ou clique para escolher um arquivo .md", type=["md", "markdown", "txt"])
+    
+    if uploaded_md is not None:
+        st.info(f"Arquivo carregado: **{uploaded_md.name}**")
+        
+        if st.button("📄 Renderizar um PDF", use_container_width=True, type="primary"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
             
-            # Limpa textos e barra pra não poluir a interface depois de baixar
-            progress_bar.empty()
-            status_text.empty()
-            
-            st.success("✅ Conversão concluída com sucesso!")
-            
-            novo_nome_arquivo = uploaded_file.name.replace(".pdf", ".md")
-            
-            # Botão de download visualmente destacado
-            st.download_button(
-                label="📥 Baixar Arquivo Markdown",
-                data=md_content,
-                file_name=novo_nome_arquivo,
-                mime="text/markdown",
-                use_container_width=True
-            )
-            
-            st.divider()
-            
-            # Exibe uma preview do markdown na tela dentro de um container com rolagem (simulado com expander)
-            with st.expander("👀 Cique aqui para pré-visualizar o conteúdo (Preview)"):
-                st.markdown(md_content)
-            
-        except Exception as e:
-            progress_bar.empty()
-            status_text.empty()
-            st.error(f"❌ Ocorreu um erro durante a conversão: {e}")
-            
-        finally:
-            # Serviço de limpeza dos temporários nos bastidores
-            if os.path.exists(tmp_file_path):
-                os.remove(tmp_file_path)
-            if 'md_file_path' in locals() and os.path.exists(md_file_path):
-                os.remove(md_file_path)
+            try:
+                status_text.text("Lendo o documento texto...")
+                progress_bar.progress(30)
+                
+                md_text = uploaded_md.getvalue().decode("utf-8")
+                
+                status_text.text("Estruturando as páginas, sumários e parágrafos do PDF...")
+                progress_bar.progress(60)
+                
+                pdf_bytes = markdownify.to_pdf(md_text)
+                source_name = os.path.splitext(uploaded_md.name)[0]
+                
+                progress_bar.progress(100)
+                status_text.text("Renderização concluída!")
+                time.sleep(0.5)
+                
+                progress_bar.empty()
+                status_text.empty()
+                
+                st.success("✅ PDF estruturado com sucesso!")
+                
+                st.download_button(
+                    label="📥 Baixar novo arquivo gerado (.pdf)",
+                    data=pdf_bytes,
+                    file_name=f"{source_name}_gerado.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+                
+            except Exception as e:
+                progress_bar.empty()
+                status_text.empty()
+                st.error(f"❌ Erro crítico ao converter para PDF: {e}")
