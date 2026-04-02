@@ -58,33 +58,66 @@ class Markdownify:
                 os.remove(tmp_path)
                 
     def to_pdf(self, markdown_text: str) -> bytes:
-        """Converte um documento Markdown em PDF com precisão de renderização Web."""
-        import subprocess
+        """Converte um documento Markdown em PDF utilizando motor nativo Web (pdfkit/wkhtmltopdf) p/ precisão máxima na Nuvem."""
+        import markdown
+        import pdfkit
         
-        # Salva o MD num tempfile temporário na estrutura exata
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".md") as tmp_md:
-            tmp_md.write(markdown_text.encode("utf-8"))
-            tmp_md_path = tmp_md.name
-            
-        pdf_path = tmp_md_path.replace(".md", ".pdf")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            pdf_path = tmp.name
         
         try:
-            # Inspirado no markdown2pdf-mcp, utilizamos o Node/Chromium sob o capô
-            # rodando o `md-to-pdf` para processar tabelas, css e alinhamento precisamente.
-            result = subprocess.run(
-                ["npx", "-y", "md-to-pdf", tmp_md_path],
-                capture_output=True,
-                text=True
+            # Processa o markdown com as extensões avançadas
+            html_body = markdown.markdown(
+                markdown_text, 
+                extensions=['tables', 'fenced_code', 'sane_lists', 'nl2br']
             )
             
-            if result.returncode != 0:
-                raise RuntimeError(f"Erro no motor Chromium: {result.stderr}")
+            # Encapsulando em HTML com um CSS elegante imitando o GitHub para garantir 100% de alinhamento
+            styled_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {{
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        font-size: 14px;
+                    }}
+                    h1, h2, h3 {{ border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }}
+                    table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
+                    th, td {{ border: 1px solid #dfe2e5; padding: 6px 13px; }}
+                    th {{ background-color: #f6f8fa; font-weight: bold; }}
+                    pre {{ background-color: #f6f8fa; padding: 16px; overflow: auto; border-radius: 3px; font-family: monospace; font-size: 13px; }}
+                    code {{ background-color: rgba(27,31,35,0.05); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 13px; }}
+                    blockquote {{ padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; margin: 0; }}
+                    img {{ max-width: 100%; box-sizing: content-box; }}
+                </style>
+            </head>
+            <body>
+                {html_body}
+            </body>
+            </html>
+            """
+            
+            # Opções de renderização do Webkit
+            options = {
+                'page-size': 'A4',
+                'margin-top': '2cm',
+                'margin-right': '2cm',
+                'margin-bottom': '2cm',
+                'margin-left': '2cm',
+                'encoding': "UTF-8",
+                'enable-local-file-access': None,
+                'no-outline': None
+            }
+            
+            pdfkit.from_string(styled_html, pdf_path, options=options)
             
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
             return pdf_bytes
         finally:
-            if os.path.exists(tmp_md_path):
-                os.remove(tmp_md_path)
             if os.path.exists(pdf_path):
                 os.remove(pdf_path)
