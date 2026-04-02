@@ -104,8 +104,8 @@ div[data-testid="stDownloadButton"] > button:hover {
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-st.title("📄 Conversor Markdownify")
-st.markdown("Ferramenta inspirada no robusto ecossistema `markdownify-mcp`. Transforme **qualquer arquivo** (PDF, Word, Excel, Texto) ou **URLs** (Páginas e artigos) em texto formatado `.md`.")
+st.title("📄 Conversor de arquivos de qualquer formato para MARKDOWN (.MD)")
+st.markdown("Transforme **qualquer arquivo** (PDF, Word, Excel, Texto) ou **URLs** (Páginas e artigos) em texto formatado `.md`. Para que a LLM possa ler e entender o conteúdo do arquivo, economizando tokens")
 
 st.divider()
 
@@ -122,7 +122,7 @@ opcao = st.radio(
 st.divider()
 
 if opcao == "Extrair Arquivo/PDF para Markdown":
-    st.subheader("📄 Extrair Markdown de um Documento Universal")
+    st.subheader("📄 Extrair Markdown de um Documento")
     st.markdown("Faça o upload do seu arquivo (PDF, Word, Excel, PowerPoint) para extrair os textos e imagens formatadas.")
     
     uploaded_pdf = st.file_uploader(
