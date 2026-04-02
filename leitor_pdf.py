@@ -58,9 +58,9 @@ class Markdownify:
                 os.remove(tmp_path)
                 
     def to_pdf(self, markdown_text: str) -> bytes:
-        """Converte um documento Markdown em PDF utilizando motor nativo Web (pdfkit/wkhtmltopdf) p/ precisão máxima na Nuvem."""
+        """Converte um documento Markdown em PDF utilizando motor WeasyPrint moderno p/ precisão máxima na Nuvem."""
         import markdown
-        import pdfkit
+        from weasyprint import HTML
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             pdf_path = tmp.name
@@ -79,6 +79,10 @@ class Markdownify:
             <head>
                 <meta charset="utf-8">
                 <style>
+                    @page {{
+                        size: A4;
+                        margin: 2cm;
+                    }}
                     body {{
                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
                         line-height: 1.6;
@@ -88,8 +92,8 @@ class Markdownify:
                     h1, h2, h3 {{ border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }}
                     table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
                     th, td {{ border: 1px solid #dfe2e5; padding: 6px 13px; }}
-                    th {{ background-color: #f6f8fa; font-weight: bold; }}
-                    pre {{ background-color: #f6f8fa; padding: 16px; overflow: auto; border-radius: 3px; font-family: monospace; font-size: 13px; }}
+                    th {{ background-color: #f6f8fa; font-weight: bold; text-align: left; }}
+                    pre {{ background-color: #f6f8fa; padding: 16px; overflow: auto; border-radius: 3px; font-family: monospace; font-size: 13px; page-break-inside: avoid; }}
                     code {{ background-color: rgba(27,31,35,0.05); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 13px; }}
                     blockquote {{ padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; margin: 0; }}
                     img {{ max-width: 100%; box-sizing: content-box; }}
@@ -101,19 +105,8 @@ class Markdownify:
             </html>
             """
             
-            # Opções de renderização do Webkit
-            options = {
-                'page-size': 'A4',
-                'margin-top': '2cm',
-                'margin-right': '2cm',
-                'margin-bottom': '2cm',
-                'margin-left': '2cm',
-                'encoding': "UTF-8",
-                'enable-local-file-access': None,
-                'no-outline': None
-            }
-            
-            pdfkit.from_string(styled_html, pdf_path, options=options)
+            # Gera o PDF via WeasyPrint direto do HTML
+            HTML(string=styled_html).write_pdf(pdf_path)
             
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()

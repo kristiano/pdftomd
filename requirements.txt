@@ -3,5 +3,5 @@ pymupdf
 pymupdf4llm
 markitdown
 requests
-pdfkit
+weasyprint
 markdown
