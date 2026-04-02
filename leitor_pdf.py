@@ -58,22 +58,33 @@ class Markdownify:
                 os.remove(tmp_path)
                 
     def to_pdf(self, markdown_text: str) -> bytes:
-        """Converte um documento Markdown em PDF (bytes para download direto)."""
-        from markdown_pdf import MarkdownPdf, Section
+        """Converte um documento Markdown em PDF com precisão de renderização Web."""
+        import subprocess
         
-        pdf = MarkdownPdf(toc_level=2)
-        # Transforma o markdown original num container PDF compatível (com TOC)
-        pdf.add_section(Section(markdown_text))
-        
-        # Salva o PDF num tempfile temporário e extrai os bytes para download
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp_path = tmp.name
+        # Salva o MD num tempfile temporário na estrutura exata
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".md") as tmp_md:
+            tmp_md.write(markdown_text.encode("utf-8"))
+            tmp_md_path = tmp_md.name
+            
+        pdf_path = tmp_md_path.replace(".md", ".pdf")
         
         try:
-            pdf.save(tmp_path)
-            with open(tmp_path, "rb") as f:
+            # Inspirado no markdown2pdf-mcp, utilizamos o Node/Chromium sob o capô
+            # rodando o `md-to-pdf` para processar tabelas, css e alinhamento precisamente.
+            result = subprocess.run(
+                ["npx", "-y", "md-to-pdf", tmp_md_path],
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode != 0:
+                raise RuntimeError(f"Erro no motor Chromium: {result.stderr}")
+            
+            with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
             return pdf_bytes
         finally:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            if os.path.exists(tmp_md_path):
+                os.remove(tmp_md_path)
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
