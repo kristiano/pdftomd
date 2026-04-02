@@ -6,6 +6,104 @@ from leitor_pdf import Markdownify
 
 st.set_page_config(page_title="Markdownify Universal", page_icon="📄", layout="centered")
 
+# Injeção de CSS Profissional (Inspirado no design system gerado pelo UI-UX-Pro-Max)
+custom_css = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"]  {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1E293B;
+}
+
+[data-testid="stAppViewContainer"] {
+    background-color: #F8FAFC;
+    background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+h1 {
+    font-weight: 700;
+    color: #1E293B !important;
+    letter-spacing: -0.02em;
+}
+
+h3 {
+    font-weight: 600;
+    color: #334155 !important;
+}
+
+/* Primary Button Styling (Orange CTA para conversão) */
+div.stButton > button {
+    background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+    color: white !important;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
+    transition: all 0.3s ease;
+}
+
+div.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.1);
+    background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+}
+
+/* Download Button Specific (Secondary Primary) */
+div[data-testid="stDownloadButton"] > button {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+div[data-testid="stDownloadButton"] > button:hover {
+    background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+/* Radio buttons container (SaaS Look) */
+[data-testid="stRadio"] {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #E2E8F0;
+    margin-bottom: 1.5rem;
+}
+
+/* File Uploader Dropzone Styling */
+[data-testid="stFileUploadDropzone"] {
+    background: white;
+    border: 2px dashed #94A3B8;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+[data-testid="stFileUploadDropzone"]:hover {
+    border-color: #2563EB;
+    background: #EFF6FF;
+}
+
+/* Alerts and Inputs */
+.stAlert {
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+}
+
+.stTextArea textarea {
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+}
+
+.stTextArea textarea:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 1px #2563EB;
+}
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
 st.title("📄 Conversor Markdownify")
 st.markdown("Ferramenta inspirada no robusto ecossistema `markdownify-mcp`. Transforme **qualquer arquivo** (PDF, Word, Excel, Texto) ou **URLs** (Páginas e artigos) em texto formatado `.md`.")
 
