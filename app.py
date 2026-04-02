@@ -15,6 +15,11 @@ st.divider()
 uploaded_file = st.file_uploader("Arraste e solte ou clique para escolher um arquivo PDF", type="pdf")
 
 if uploaded_file is not None:
+    # Verificação de segurança adicional para o formato do arquivo
+    if not uploaded_file.name.lower().endswith('.pdf'):
+        st.error("⚠️ **Atenção:** Formato de arquivo não suportado! O aplicativo aceita apenas arquivos com a extensão **.pdf**.")
+        st.stop()
+
     st.info(f"Arquivo selecionado: **{uploaded_file.name}**")
     
     # Adicionando botão que dispara a conversão para dar controle ao usuário
