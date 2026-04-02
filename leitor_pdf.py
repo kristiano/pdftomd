@@ -84,7 +84,7 @@ class Markdownify:
                         margin: 2cm;
                     }}
                     body {{
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
                         line-height: 1.6;
                         color: #333;
                         font-size: 14px;
