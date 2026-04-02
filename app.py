@@ -17,17 +17,20 @@ markdownify = Markdownify()
 # Seleção principal da ferramenta
 opcao = st.radio(
     "Escolha a operação desejada:",
-    ("Converter PDF para Markdown", "Converter Markdown para PDF"),
+    ("Extrair Arquivo/PDF para Markdown", "Converter Markdown para PDF"),
     horizontal=False
 )
 
 st.divider()
 
-if opcao == "Converter PDF para Markdown":
-    st.subheader("📄 Extrair Markdown de um PDF")
-    st.markdown("Faça o upload do seu arquivo PDF para extrair os textos e imagens formatadas.")
+if opcao == "Extrair Arquivo/PDF para Markdown":
+    st.subheader("📄 Extrair Markdown de um Documento Universal")
+    st.markdown("Faça o upload do seu arquivo (PDF, Word, Excel, PowerPoint) para extrair os textos e imagens formatadas.")
     
-    uploaded_pdf = st.file_uploader("Arraste e solte ou clique para escolher um arquivo .pdf", type=["pdf"])
+    uploaded_pdf = st.file_uploader(
+        "Arraste e solte ou clique para escolher um documento", 
+        type=["pdf", "docx", "doc", "xlsx", "pptx", "html"]
+    )
     
     if uploaded_pdf is not None:
         st.info(f"Arquivo carregado: **{uploaded_pdf.name}**")
