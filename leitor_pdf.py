@@ -84,10 +84,11 @@ class Markdownify:
                         margin: 2cm;
                     }}
                     body {{
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Liberation Sans", Helvetica, Arial, sans-serif;
                         line-height: 1.6;
                         color: #333;
                         font-size: 14px;
+                        font-variant-ligatures: none;
                     }}
                     h1, h2, h3 {{ border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }}
                     table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
