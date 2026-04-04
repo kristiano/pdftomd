@@ -133,6 +133,15 @@ if opcao == "Extrair Arquivo/PDF para Markdown":
     if uploaded_pdf is not None:
         st.info(f"Arquivo carregado: **{uploaded_pdf.name}**")
         
+        # Opção de modo de extração (com ou sem imagem)
+        modo_imagem = st.radio(
+            "Modo de extração de imagens:",
+            ("Com imagem", "Sem imagem (ideal para LLM)"),
+            horizontal=True,
+            help="Escolha 'Sem imagem' para gerar um Markdown mais leve e otimizado para uso com modelos de linguagem (LLM), economizando tokens."
+        )
+        embed_images = modo_imagem == "Com imagem"
+        
         if st.button("🚀 Converter para .md", use_container_width=True, type="primary"):
             file_size_mb = len(uploaded_pdf.getvalue()) / (1024 * 1024)
             # Estimativa básica: ~4 segundos por Megabyte do arquivo para extração pesada
@@ -150,11 +159,14 @@ if opcao == "Extrair Arquivo/PDF para Markdown":
                     tmp_file.write(uploaded_pdf.getvalue())
                     tmp_file_path = tmp_file.name
                 
-                status_text.text("Lendo documento e gerando imagens embutidas...")
+                if embed_images:
+                    status_text.text("Lendo documento e gerando imagens embutidas...")
+                else:
+                    status_text.text("Lendo documento (somente texto, sem imagens)...")
                 progress_bar.progress(60, text=f"60% - Motor executando extração profunda... (Aguarde)")
 
                 start_time = time.time()
-                md_content = markdownify.from_file(tmp_file_path)
+                md_content = markdownify.from_file(tmp_file_path, embed_images=embed_images)
                 elapsed = time.time() - start_time
                 source_name = os.path.splitext(uploaded_pdf.name)[0]
                 
@@ -165,7 +177,8 @@ if opcao == "Extrair Arquivo/PDF para Markdown":
                 progress_bar.empty()
                 status_text.empty()
                 
-                st.success("✅ Documento Markdown gerado com sucesso!")
+                modo_label = "com imagens" if embed_images else "somente texto (sem imagens)"
+                st.success(f"✅ Documento Markdown gerado com sucesso! Modo: **{modo_label}**")
                 
                 st.download_button(
                     label="📥 Baixar Arquivo Markdown",

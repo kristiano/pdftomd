@@ -13,9 +13,9 @@ class Markdownify:
     def __init__(self):
         pass
 
-    def from_file(self, file_path: str) -> str:
+    def from_file(self, file_path: str, embed_images: bool = True) -> str:
         """Delega a extração de arquivos para o serviço de domínio extrator."""
-        return extract_markdown_from_file(file_path)
+        return extract_markdown_from_file(file_path, embed_images=embed_images)
 
     def from_url(self, url: str) -> str:
         """Delega as complexidades de rede para o Handler HTTP."""
