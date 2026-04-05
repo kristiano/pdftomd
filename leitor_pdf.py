@@ -1,7 +1,8 @@
 from core import (
     extract_markdown_from_file,
     fetch_and_extract_from_url,
-    generate_pdf_from_markdown
+    generate_pdf_from_markdown,
+    PDFOptimizer
 )
 
 class Markdownify:
@@ -24,3 +25,8 @@ class Markdownify:
     def to_pdf(self, markdown_text: str) -> bytes:
         """Transfere o processamento de renderização WeasyPrint para o motor de PDF isolado."""
         return generate_pdf_from_markdown(markdown_text)
+
+    def optimize_pdf(self, file_path: str, method: str = "simple", quality: int = 85, dpi: int = 150) -> tuple:
+        """Otimiza um arquivo PDF reduzindo seu tamanho."""
+        optimizer = PDFOptimizer(quality=quality, raster_dpi=dpi)
+        return optimizer.compress(file_path, method=method)
