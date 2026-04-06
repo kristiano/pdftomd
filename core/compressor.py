@@ -41,7 +41,7 @@ class PDFOptimizer:
             output_tmp = Path(tmp_dir) / "optimized.pdf"
             
             if method == "simple" or self.keep_text:
-                if progress_callback: progress_callback(0.2, "Analizando estrutura binária...")
+                if progress_callback: progress_callback(0.2, "Analisando estrutura binária...")
                 self._simple_compression(input_file, output_tmp)
                 if progress_callback: progress_callback(1.0, "Otimização concluída.")
             else:
@@ -80,19 +80,23 @@ class PDFOptimizer:
                     new_doc.close(); doc.close()
                     return True
             
-            # --- TAREFA PESADA (CPU Bound) ---
             pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csRGB)
             img_data = pix.tobytes("jpeg", jpg_quality=self.quality)
             new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(page.rect, stream=img_data)
             
             pix = None; img_data = None
-            
-            # --- PONTO DE CONCORRÊNCIA (GIL YIELD) ---
-            # Pequeno intervalo para permitir que threads de outros usuários 
-            # (sessões do Streamlit) respirem e o servidor não trave globalmente.
             time.sleep(0.01)
             
         new_doc.save(str(output_path), garbage=4, deflate=True, clean=True)
         new_doc.close(); doc.close()
         return False
+
+def format_size(size_bytes: int) -> str:
+    """Formata tamanho de arquivo em string legível."""
+    size = float(size_bytes)
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} TB"
