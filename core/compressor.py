@@ -13,7 +13,7 @@ class PDFOptimizer:
 
     def __init__(
         self,
-        quality: int = 85,
+        quality: int = 75,
         raster_dpi: int = 150
     ):
         self.quality = max(1, min(100, quality))
@@ -39,7 +39,7 @@ class PDFOptimizer:
             output_tmp = Path(tmp_dir) / "optimized.pdf"
             
             if method == "simple":
-                if progress_callback: progress_callback(0.2, "Otimizando estrutura binária...")
+                if progress_callback: progress_callback(0.2, "Otimizando imagens e estrutura...")
                 self._simple_compression(input_file, output_tmp)
                 if progress_callback: progress_callback(1.0, "Otimização concluída.")
             else:
@@ -51,8 +51,10 @@ class PDFOptimizer:
 
             final_size = output_tmp.stat().st_size
             
-            # Se o arquivo resultante ficou maior e é o modo simples, retorna o original
-            if final_size >= original_size and method == "simple":
+            # --- TRAVA DE SEGURANÇA UNIVERSAL ---
+            # Se o arquivo ficou maior ou igual ao original, NUNCA retorna o maior.
+            # Retorna o original em bytes e informa economia zero.
+            if final_size >= original_size:
                 with open(input_path, "rb") as f:
                     return f.read(), 0.0, False
             
@@ -61,47 +63,50 @@ class PDFOptimizer:
                 return f.read(), reduction, False
 
     def _simple_compression(self, input_path: Path, output_path: Path):
-        """Otimização estrutural avançada (Correção: Removida Linearização Depreciada)."""
+        """Otimização estrutural com Subamostragem de Imagens (Estratégia Ghostscript)."""
         doc = fitz.open(str(input_path))
         
-        # O parâmetro 'linear=True' foi depreciado nas versões recentes do PyMuPDF/MuPDF (erro code=4).
-        # Removemos para garantir compatibilidade total.
+        # Salvamento Expert: Reduz tamanho de imagens internas sem destruir o texto
+        # 'image_subsample=4' reduz a resolução de imagens embutidas em 4x
         doc.save(
             str(output_path), 
             garbage=4, 
             deflate=True, 
-            clean=True, 
+            clean=True,
+            image_subsample=4, # Reduz drasticamente fotos internas no modo simples
             pretty=False
         )
         doc.close()
 
     def _raster_compression(self, input_path: Path, output_path: Path, progress_callback: Optional[Callable] = None) -> bool:
-        """Compressão por rasterização real com controle de qualidade JPEG."""
+        """Compressão por redestilação (Agressiva)."""
         doc = fitz.open(str(input_path))
         new_doc = fitz.open()
         
         total_pages = len(doc)
+        # Ajuste de Matrix: Para 150 DPI, usamos fator 2.08. 
+        # Se o usuário baixar a qualidade, podemos reduzir a escala.
         scale = self.raster_dpi / 72
         matrix = fitz.Matrix(scale, scale)
         
         for i, page in enumerate(doc):
             if progress_callback:
-                if progress_callback((i / total_pages), f"Processando página {i+1} de {total_pages}"):
+                if progress_callback((i / total_pages), f"Redestilando página {i+1} de {total_pages}"):
                     new_doc.close(); doc.close()
                     return True
             
             # Converter página para Pixmap
             pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csRGB)
-            # Codificar como JPEG
+            # Codificar como JPEG com qualidade controlada
             img_data = pix.tobytes("jpeg", jpg_quality=self.quality)
             
-            # Criar nova página e inserir imagem
+            # Criar nova página e inserir a imagem comprimida
             new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(page.rect, stream=img_data)
             
             # Limpeza de memória
             pix = None; img_data = None
-            time.sleep(0.01) # Yielding
+            time.sleep(0.01)
             
         new_doc.save(str(output_path), garbage=4, deflate=True, clean=True)
         new_doc.close(); doc.close()
