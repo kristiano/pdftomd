@@ -5,289 +5,280 @@ import time
 from leitor_pdf import Markdownify
 from core import format_size
 
-st.set_page_config(page_title="Markdownify Universal", page_icon="📄", layout="centered")
+# Configuração da página com tema light forçado e layout wide
+st.set_page_config(
+    page_title="Document Master Ultra | Pro", 
+    page_icon="📄", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Injeção de CSS Profissional (Inspirado no design system gerado pelo UI-UX-Pro-Max)
-custom_css = """
+# Design System: UI/UX Pro Max Edition (Fundo Branco + Indigo/Slate)
+design_system_css = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap');
 
-html, body, [class*="css"]  {
+/* Reset e Base */
+:root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --bg-white: #FFFFFF;
+    --bg-slate-50: #F8FAFC;
+    --text-slate-900: #0F172A;
+    --text-slate-600: #475569;
+    --border-slate-200: #E2E8F0;
+    --emerald-500: #10B981;
+    --amber-500: #F59E0B;
+}
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-slate-900);
+    background-color: var(--bg-white);
+}
+
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-slate-50);
+    border-right: 1px solid var(--border-slate-200);
+}
+
+[data-testid="stSidebar"] .stRadio > label {
+    font-weight: 600;
+    color: var(--text-slate-900);
+    margin-bottom: 15px;
+}
+
+/* Main Title Styling */
+.main-title {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    color: #1E293B;
+    font-weight: 800;
+    font-size: 2.5rem;
+    color: var(--text-slate-900);
+    letter-spacing: -0.04em;
+    margin-bottom: 0.5rem;
 }
 
-[data-testid="stAppViewContainer"] {
-    background-color: #F8FAFC;
-    background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
-    background-size: 20px 20px;
-}
-
-/* Glassmorphism Cards */
-.stMetric {
-    background: white;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    border: 1px solid #E2E8F0;
-}
-
-h1 {
-    font-weight: 700;
-    color: #1E293B !important;
-    letter-spacing: -0.02em;
-}
-
-h3 {
-    font-weight: 600;
-    color: #334155 !important;
-}
-
-/* Primary Button Styling */
-div.stButton > button {
-    background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-    color: white !important;
-    font-weight: 600;
-    border-radius: 8px;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
-    transition: all 0.3s ease;
-    width: 100%;
-}
-
-div.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
-    background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
-}
-
-/* Success Button Styling (Orange for convert) */
-.btn-convert > div.stButton > button {
-    background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
-    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2);
-}
-
-/* Download Button Specific */
-div[data-testid="stDownloadButton"] > button {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
-    width: 100%;
-}
-
-/* Radio buttons container */
-[data-testid="stRadio"] {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    border: 1px solid #E2E8F0;
-}
-
-/* File Uploader Dropzone */
-[data-testid="stFileUploadDropzone"] {
-    background: white;
-    border: 2px dashed #CBD5E1;
-    border-radius: 12px;
-}
-
-.metric-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+.sub-title {
+    color: var(--text-slate-600);
+    font-size: 1.1rem;
     margin-bottom: 2rem;
 }
 
-.metric-card {
-    background: white;
-    padding: 1.5rem;
+/* Professional Cards (Containers) */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border: 1px solid var(--border-slate-200) !important;
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    background-color: var(--bg-white) !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Custom Metric Cards for Optimizer */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.pro-metric {
+    padding: 1.25rem;
+    background: var(--bg-slate-50);
+    border: 1px solid var(--border-slate-200);
     border-radius: 12px;
-    border: 1px solid #E2E8F0;
-    flex: 1;
     text-align: center;
 }
 
-.metric-value {
+.pro-metric-val {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #4F46E5;
+    color: var(--primary);
 }
 
-.metric-label {
-    font-size: 0.8rem;
-    color: #64748B;
+.pro-metric-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-slate-600);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+
+/* Button UI Pro */
+div.stButton > button {
+    background-color: var(--primary);
+    color: white !important;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);
+}
+
+div.stButton > button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);
+}
+
+/* Success Download Button */
+div[data-testid="stDownloadButton"] > button {
+    background-color: var(--emerald-500);
+    width: 100%;
+}
+
+/* Form Helper Text */
+.stMarkdown p {
+    line-height: 1.6;
+}
+
+/* Divider Styling */
+hr {
+    margin: 2rem 0 !important;
+    border-color: var(--border-slate-200) !important;
+}
 </style>
 """
-st.markdown(custom_css, unsafe_allow_html=True)
+st.markdown(design_system_css, unsafe_allow_html=True)
 
-st.title("📄 Document Master Ultra")
-st.markdown("A suíte definitiva para processamento de documentos. Converta, otimize e renderize com precisão cirúrgica.")
-
-st.divider()
-
-# Instancia a engine principal
+# App Logic initialization
 markdownify = Markdownify()
 
-# Seleção principal da ferramenta
-opcao = st.sidebar.radio(
-    "Menu de Ferramentas",
-    ("Extrair para Markdown", "Gerar PDF", "Otimizar & Comprimir PDF"),
-    index=0
-)
-
-st.sidebar.divider()
-st.sidebar.caption("v2.5 - desenvolvido por Kristiano Plácido")
-
-if opcao == "Extrair para Markdown":
-    st.subheader("📄 Extrair Markdown de um Documento")
-    st.markdown("Transforme PDFs, docs e outros arquivos em texto formatado `.md` otimizado para LLMs.")
+# --- SIDEBAR NAV ---
+with st.sidebar:
+    st.markdown('<p style="font-family: \'Plus Jakarta Sans\', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 0;">Master Ultra</p>', unsafe_allow_html=True)
+    st.caption("v2.5 — UI-UX Pro Edition")
+    st.divider()
     
-    uploaded_file = st.file_uploader(
-        "Upload do documento", 
-        type=["pdf", "docx", "doc", "xlsx", "pptx", "html"]
+    selected = st.radio(
+        "Navegação Principal",
+        ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"],
+        index=0
     )
     
-    if uploaded_file :
-        st.info(f"Arquivo: **{uploaded_file.name}** ({format_size(len(uploaded_file.getvalue()))})")
+    st.divider()
+    st.caption("Desenvolvido por Kristiano Plácido")
+
+# --- MAIN PAGE HEADER ---
+col_header_1, col_header_2 = st.columns([2, 1])
+with col_header_1:
+    st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-title">Converta, otimize e estruture arquivos para o futuro da IA.</p>', unsafe_allow_html=True)
+
+# --- WORKSPACE AREA ---
+if selected == "📦 Converter Documentos":
+    with st.container(border=True):
+        st.subheader("Extração Universal para Markdown")
+        st.write("Suporta PDF, DOCX, XLSX, PPTX e HTML. Otimizado para alta fidelidade e leitura por LLMs.")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            modo_imagem = st.radio(
-                "Inclusão de Mídia:",
-                ("Com imagens", "Somente texto"),
-                help="Escolha 'Somente texto' para economizar tokens em LLMs."
-            )
+        file = st.file_uploader("Arraste seu arquivo aqui", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], key="uploader_conv")
         
-        embed_images = modo_imagem == "Com imagens"
-        
-        st.markdown('<div class="btn-convert">', unsafe_allow_html=True)
-        if st.button("🚀 Iniciar Extração Profunda", type="primary"):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp:
-                tmp.write(uploaded_file.getvalue())
-                tmp_path = tmp.name
+        if file:
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                st.info(f"**{file.name}** pronto para processamento. ({format_size(len(file.getvalue()))})")
+            with c2:
+                mode = st.toggle("Incluir Imagens", value=True, help="Embutir imagens em base64 no Markdown.")
+            
+            if st.button("🚀 Iniciar Conversão Inteligente", use_container_width=True):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.name.split('.')[-1]}") as tmp:
+                    tmp.write(file.getvalue())
+                    tmp_path = tmp.name
                 
-            try:
-                with st.spinner("Analisando estrutura e extraindo conteúdo..."):
-                    start_time = time.time()
-                    md_content = markdownify.from_file(tmp_path, embed_images=embed_images)
-                    elapsed = time.time() - start_time
+                try:
+                    with st.status("Extraindo conteúdo e preservando layout...", expanded=True) as status:
+                        start = time.time()
+                        md = markdownify.from_file(tmp_path, embed_images=mode)
+                        elapsed = time.time() - start
+                        status.update(label=f"Concluído em {elapsed:.1f}s!", state="complete", expanded=False)
                     
-                st.success(f"✅ Extração finalizada em {elapsed:.1f}s")
-                
-                st.download_button(
-                    label="📥 Baixar Markdown (.md)",
-                    data=md_content,
-                    file_name=f"{os.path.splitext(uploaded_file.name)[0]}.md",
-                    mime="text/markdown"
-                )
-                
-                with st.expander("👀 Visualizar Conteúdo"):
-                    st.markdown(md_content, unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Erro: {e}")
-            finally:
-                if os.path.exists(tmp_path): os.remove(tmp_path)
-        st.markdown('</div>', unsafe_allow_html=True)
+                    st.success("Markdown gerado com sucesso.")
+                    st.download_button("📥 Baixar Arquivo .md", md, file_name=f"{os.path.splitext(file.name)[0]}.md")
+                    
+                    with st.expander("👀 Preview do Documento"):
+                        st.markdown(md, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Erro na extração: {e}")
+                finally:
+                    if os.path.exists(tmp_path): os.remove(tmp_path)
 
-elif opcao == "Gerar PDF":
-    st.subheader("📝 Renderizar PDF Profissional")
-    st.markdown("Converta seus arquivos Markdown em PDFs com estilo premium GitHub.")
-    
-    uploaded_md = st.file_uploader("Upload do arquivo .md", type=["md", "markdown", "txt"])
-    
-    if uploaded_md :
-        if st.button("📄 Gerar PDF Estilizado", type="primary"):
-            try:
-                md_text = uploaded_md.getvalue().decode("utf-8")
-                with st.spinner("Renderizando layout e estilos..."):
-                    pdf_bytes = markdownify.to_pdf(md_text)
-                
-                st.success("✅ PDF gerado com sucesso!")
-                st.download_button(
-                    label="📥 Baixar PDF Gerado",
-                    data=pdf_bytes,
-                    file_name=f"{os.path.splitext(uploaded_md.name)[0]}.pdf",
-                    mime="application/pdf"
-                )
-            except Exception as e:
-                st.error(f"Erro: {e}")
-
-elif opcao == "Otimizar & Comprimir PDF":
-    st.subheader("⚡ Otimizador Inteligente de PDF")
-    st.markdown("Reduza o tamanho dos seus arquivos PDF sem perder a qualidade visual de forma significativa.")
-    
-    uploaded_pdf = st.file_uploader("Upload do PDF para compressão", type=["pdf"])
-    
-    if uploaded_pdf:
-        orig_size = len(uploaded_pdf.getvalue())
-        st.info(f"Arquivo: **{uploaded_pdf.name}** | Tamanho original: **{format_size(orig_size)}**")
+elif selected == "⚡ Otimizar PDFs":
+    with st.container(border=True):
+        st.subheader("Otimização Estrutural & Raster")
+        st.write("Reduza o tamanho de PDFs para armazenamento ou envio, escolhendo entre preservação de texto ou compressão agressiva.")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            metodo = st.selectbox(
-                "Estratégia de Compressão",
-                ["Simples (Preserva Texto)", "Agressiva (Rasterização)"],
-                help="O modo simples limpa objetos duplicados e metadados. O agressivo converte páginas em imagens otimizadas."
-            )
-        with col2:
-            qualidade = st.slider("Qualidade Visual", 10, 100, 85, help="Utilizado apenas no modo agressivo.")
+        file_opt = st.file_uploader("Selecione o PDF para otimizar", type=["pdf"], key="uploader_opt")
+        
+        if file_opt:
+            orig_bytes = file_opt.getvalue()
+            st.info(f"PDF carregado: **{file_opt.name}** ({format_size(len(orig_bytes))})")
             
-        if metodo == "Agressiva (Rasterização)":
-            dpi = st.select_slider("Resolução (DPI)", options=[72, 100, 150, 200, 300], value=150)
-        else:
-            dpi = 150
-
-        if st.button("⚡ Otimizar Agora", type="primary"):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                tmp.write(uploaded_pdf.getvalue())
-                tmp_path = tmp.name
-            
-            try:
-                method_code = "simple" if "Simples" in metodo else "raster"
-                
-                with st.spinner("Executando algoritmos de otimização..."):
-                    compressed_bytes, reduction = markdownify.optimize_pdf(
-                        tmp_path, 
-                        method=method_code, 
-                        quality=qualidade, 
-                        dpi=dpi
-                    )
-                
-                new_size = len(compressed_bytes)
-                
-                # App Show Analytics
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-card">
-                        <div class="metric-label">Original</div>
-                        <div class="metric-value">{format_size(orig_size)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Reduzido</div>
-                        <div class="metric-value">{format_size(new_size)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Economia</div>
-                        <div class="metric-value" style="color: #10B981;">{reduction:.1f}%</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if reduction > 0:
-                    st.success(f"✅ Sucesso! O arquivo foi reduzido em {format_size(orig_size - new_size)}.")
+            col_opt_1, col_opt_2 = st.columns(2)
+            with col_opt_1:
+                strat = st.selectbox("Estratégia", ["Simples (Preservar Texto)", "Agressiva (Converter para Imagem)"])
+            with col_opt_2:
+                qual = st.slider("Qualidade Visual", 10, 100, 85)
+                if "Agressiva" in strat:
+                    dpi = st.select_slider("Resolução (DPI)", options=[72, 100, 150, 200, 300], value=150)
                 else:
-                    st.warning("⚠️ O arquivo já estava otimizado ao máximo. Nenhuma redução adicional foi possível.")
+                    dpi = 150
+            
+            if st.button("⚡ Executar Otimização"):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                    tmp.write(orig_bytes)
+                    tmp_path = tmp.name
+                
+                try:
+                    with st.spinner("Compactando dados estruturais..."):
+                        m_code = "simple" if "Simples" in strat else "raster"
+                        compressed, reduction = markdownify.optimize_pdf(tmp_path, method=m_code, quality=qual, dpi=dpi)
+                    
+                    # Dashboard de Resultado Pro
+                    st.markdown(f"""
+                    <div class="metrics-grid">
+                        <div class="pro-metric">
+                            <p class="pro-metric-label">Original</p>
+                            <p class="pro-metric-val">{format_size(len(orig_bytes))}</p>
+                        </div>
+                        <div class="pro-metric">
+                            <p class="pro-metric-label">Otimizado</p>
+                            <p class="pro-metric-val">{format_size(len(compressed))}</p>
+                        </div>
+                        <div class="pro-metric">
+                            <p class="pro-metric-label">Economia</p>
+                            <p class="pro-metric-val" style="color: var(--emerald-500);">{reduction:.1f}%</p>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.download_button("📥 Baixar PDF Otimizado", compressed, file_name=f"{os.path.splitext(file_opt.name)[0]}_opt.pdf")
+                except Exception as e:
+                    st.error(f"Erro: {e}")
+                finally:
+                    if os.path.exists(tmp_path): os.remove(tmp_path)
 
-                st.download_button(
-                    label="📥 Baixar PDF Otimizado",
-                    data=compressed_bytes,
-                    file_name=f"{os.path.splitext(uploaded_pdf.name)[0]}_otimizado.pdf",
-                    mime="application/pdf"
-                )
-            except Exception as e:
-                st.error(f"Erro na compressão: {e}")
-            finally:
-                if os.path.exists(tmp_path): os.remove(tmp_path)
+elif selected == "📄 Markdown para PDF":
+    with st.container(border=True):
+        st.subheader("Renderizador Profissional WeasyPrint")
+        st.write("Converta documentos Markdown em PDFs elegantes com suporte a tabelas e imagens.")
+        
+        file_md = st.file_uploader("Upload do arquivo .md", type=["md", "markdown", "txt"], key="uploader_md")
+        
+        if file_md:
+            if st.button("📄 Gerar PDF Master"):
+                try:
+                    text = file_md.getvalue().decode("utf-8")
+                    with st.spinner("Desenhando PDF com CSS GitHub..."):
+                        pdf = markdownify.to_pdf(text)
+                    st.success("Renderização concluída.")
+                    st.download_button("📥 Baixar PDF Renderizado", pdf, file_name=f"documento_renderizado.pdf")
+                except Exception as e:
+                    st.error(f"Erro: {e}")
+
+# --- FOOTEER ---
+st.divider()
+f_col1, f_col2 = st.columns([3, 1])
+with f_col2:
+    st.caption("© 2024 Document Master Ultra — Kristiano Plácido")
