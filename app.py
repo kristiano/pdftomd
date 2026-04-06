@@ -148,9 +148,6 @@ def show_progress(q, start):
 with st.sidebar:
     st.markdown("""
         <div style="display: flex; align-items: center; margin-bottom: 25px;">
-            <div style="background-color: #4F46E5; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <span style="color: white; font-size: 22px; font-weight: bold;">C</span>
-            </div>
             <div><h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0F172A;">Canivete Suíço</h2><p style="margin: 0; font-size: 0.75rem; color: #64748B;">v2.5 — Painel Docs</p></div>
         </div>
     """, unsafe_allow_html=True)
