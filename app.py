@@ -15,9 +15,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- SISTEMA DE SESSÃO CORPORATIVO ---
-if 'engine' not in st.session_state:
-    st.session_state.engine = Markdownify()
+# --- REFRESH DO MOTOR (Garante compatibilidade total) ---
+markdownify = Markdownify()
 
 if 'stop_event' not in st.session_state:
     st.session_state.stop_event = threading.Event()
@@ -82,8 +81,6 @@ div[data-testid="stDownloadButton"] > button { background-color: #10B981 !import
 """
 st.markdown(design_system_css, unsafe_allow_html=True)
 
-markdownify = st.session_state.engine
-
 # Helper Assíncrono
 def run_async(task_func, stop_event, *args, **kwargs):
     q = queue.Queue()
@@ -113,30 +110,31 @@ def show_progress(q, start):
                 p_ui.progress(msg["v"], text=f"**{int(msg['v']*100)}%** • {msg['t']} {'| ETA: ~'+str(eta)+'s' if eta > 0 else ''}")
             elif msg["type"] == "r": p_ui.empty(); return msg
             elif msg["type"] == "c": p_ui.empty(); st.warning("Cancelado."); return None
-            elif msg["type"] == "e": p_ui.empty(); st.error(f"Erro: {msg['m']}"); return None
+            elif msg["type"] == "e": p_ui.empty(); st.error(f"Erro Crítico: {msg['m']}"); return None
         except queue.Empty: time.sleep(0.08)
 
-# --- SIDEBAR ---
+# --- SIDEBAR (Restaurado Ferramentas) ---
 with st.sidebar:
-    st.markdown("## Canivete Suíço")
+    st.markdown("### 📄 Canivete Suíço")
     st.divider()
-    selected = st.selectbox("Escolha a Operação", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], index=1, label_visibility="collapsed")
+    # RESTAURADO: Nome "Ferramentas" para escolha do usuário
+    selected = st.selectbox("Ferramentas", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], index=1)
     st.divider()
 
 # --- CONTENT ---
 st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Otimização e extração de alta performance sem travamentos.</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Gestão profissional com tecnologia de ponta (v2.8).</p>', unsafe_allow_html=True)
 
 if selected == "📦 Converter Documentos":
     with st.container(border=True):
-        st.subheader("Extração")
-        file = st.file_uploader("Upload", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], label_visibility="collapsed")
+        st.subheader("Extração de Dados")
+        file = st.file_uploader("Arquivo", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], label_visibility="collapsed")
         if file:
             fb = file.getvalue()
             st.info(f"**{file.name}** ({format_size(len(fb))})")
             img_on = st.toggle("Imagens", value=True)
             col_b1, col_b2 = st.columns([2, 1])
-            if col_b1.button("🚀 Iniciar", type="primary", use_container_width=True):
+            if col_b1.button("🚀 Iniciar Conversão", type="primary", use_container_width=True):
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.name.split('.')[-1]}") as tmp:
                     tmp.write(fb); tp = tmp.name
                 try:
@@ -150,16 +148,13 @@ if selected == "📦 Converter Documentos":
 
 elif selected == "⚡ Otimizar PDFs":
     with st.container(border=True):
-        st.subheader("Otimização Expert (Base Ghostscript)")
+        st.subheader("Otimização Expert (v2.8)")
         file_o = st.file_uploader("PDF", type=["pdf"], key="opt_up", label_visibility="collapsed")
         if file_o:
             ob = file_o.getvalue()
             size_mb = len(ob) / (1024 * 1024)
-            
-            # ATUALIZADO: Limite estendido para 50MB (Suporte a arquivos maiores)
             if size_mb > 50:
-                st.error(f"Arquivo de **{size_mb:.1f}MB** excede o novo limite de 50MB.")
-                st.info("💡 Para arquivos maiores que 50MB, recomendamos dividir o PDF para manter a agilidade da rede.")
+                st.error(f"Arquivo excedeu o limite de 50MB.")
             else:
                 st.info(f"**{file_o.name}** ({format_size(len(ob))})")
                 co1, co2 = st.columns(2)
@@ -202,4 +197,4 @@ elif selected == "📄 Markdown para PDF":
             col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
 
 st.divider()
-st.caption("© 2024 canivete suíço - 2.7v Especialista")
+st.caption("© 2024 canivete suíço - 2.8v Especialista")
