@@ -3,5 +3,6 @@ pymupdf
 pymupdf4llm
 markitdown
 requests
-weasyprint
+fpdf2
+Pillow
 markdown
