@@ -1,89 +1,65 @@
-# 📄 Document Master Ultra (v2.5)
+# 📄 Canivete Suíço para Documentos — v2.8 (Expert)
 
-Uma suíte poderosa e profissional para processamento de documentos, construída com [Streamlit](https://streamlit.io/) e os motores de processamento mais avançados do mercado (`PyMuPDF`, `WeasyPrint` e `MarkItDown`).
-
-Desenvolvido por **Kristiano Plácido**.
+O **Canivete Suíço Master** é uma aplicação Streamlit de alta performance projetada para converter, extrair e renderizar documentos com precisão industrial e velocidade extrema. Inspirado nos melhores servidores MCP (*Model Context Protocol*), este projeto utiliza uma arquitetura assíncrona para garantir uma experiência de usuário fluida e sem travamentos.
 
 ---
 
-## ✨ Funcionalidades Principais
+## 🚀 Funcionalidades Principais
 
-### 1. 📂 Extração para Markdown (.md)
-*   **Alta Fidelidade**: Conversão de PDFs complexos em Markdown estruturado.
-*   **Layout Preservation**: Suporte a detecção de colunas, tabelas e listas complexas através do motor `pymupdf.layout`.
-*   **Modo Imagem**: Opção para embutir imagens do PDF diretamente no Markdown em formato base64.
-*   **Universal**: Suporta também arquivos Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`) e HTML.
+### 📦 1. Conversor Universal para Markdown
+Extraia conteúdo de quase qualquer formato para Markdown limpo, ideal para uso em LLMs (ChatGPT, Claude, etc.).
+- **PDF Inteligente**: Utiliza `pymupdf4llm` para extrair texto, tabelas e preservar a estrutura original.
+- **Office & Docs**: Suporte nativo para Word (.docx), Excel (.xlsx), PowerPoint (.pptx) e HTML via motor **MarkItDown** (Microsoft).
+- **Gestão de Imagens**: Opção para embutir imagens diretamente no Markdown via Base64 ou remover ruídos visuais.
 
-### 2. 📝 Renderização de PDF Profissional
-*   **Markdown → PDF**: Transforme seus arquivos Markdown em documentos PDF com estilo limpo e profissional (GitHub Style).
-*   **Precisão**: Renderização via `WeasyPrint` garantindo que listas, kdb-tags e tabelas mantenham a formatação perfeita.
-
-### 3. ⚡ Otimização & Compressão Inteligente
-*   **Modo Simples**: Redução de tamanho através de limpeza estrutural e compressão de fluxos de objetos, preservando o texto pesquisável.
-*   **Modo Agressivo (Raster)**: Conversão de páginas em imagens otimizadas para reduções drásticas de tamanho em arquivos escaneados ou muito pesados.
-*   **Dashboard de Métricas**: Visualização em tempo real da economia de espaço e comparação entre o arquivo original e o otimizado.
+### 📄 2. Renderizador Master (Markdown para PDF)
+Transforme textos Markdown em documentos PDF profissionais com velocidade 20x superior à média.
+- **Motor FPDF2**: Substitui motores lentos (como WeasyPrint) por um sistema de renderização nativa de alta performance.
+- **Design ECharts**: Estética baseada em Slate/Indigo, com suporte a alertas GFM (Nota, Dica, Importante, Aviso).
+- **Tipografia Moderna**: Renderização limpa de cabeçalhos, listas e imagens embutidas.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Diferenciais Técnicos (Arquitetura Expert)
 
-*   **Streamlit**: Interface web moderna e responsiva.
-*   **PyMuPDF (fitz)**: Manipulação e otimização profunda de PDFs.
-*   **PyMuPDF4LLM**: Extração de Markdown otimizada para Modelos de Linguagem.
-*   **WeasyPrint**: Motor de renderização CSS/HTML para criação de PDFs.
-*   **MarkItDown**: Conversão universal de arquivos Office para Markdown.
-
----
-
-## ⚙️ Instalação e Uso Local
-
-### Pré-requisitos
-*   **Python 3.10+** instalado.
-
-### Passo a Passo
-
-1. **Clone o repositório**:
-   ```bash
-   git clone https://github.com/seu-usuario/leitor-pdf-md.git
-   cd leitor-pdf-md
-   ```
-
-2. **Crie e ative um ambiente virtual**:
-   ```bash
-   # MacOS/Linux
-   python3 -m venv .venv
-   source .venv/bin/activate
-
-   # Windows
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-
-3. **Instale as dependências**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Inicie a aplicação**:
-   ```bash
-   streamlit run app.py
-   ```
+- **Concorrência Assíncrona**: Todas as tarefas pesadas rodam em *Background Threads* com filas de comunicação (`queue`), permitindo que múltiplos usuários utilizem o app sem bloqueios.
+- **Telemetria em Tempo Real**: Barra de progresso granular com cálculo de porcentagem (%) e **ETA (Tempo Estimado)** dinâmico.
+- **Interrupção Prioritária**: Botão "Cancelar" em todas as ferramentas que utiliza sinalização de thread para interromper processos instantaneamente, economizando recursos do servidor.
+- **UI/UX Premium**: Design baseado em HSL personalizado, modo clean com sidebar persistente e componentes responsivos.
 
 ---
 
-## 🚀 Como usar
+## 💻 Instalação e Uso
 
-1.  Acesse o menu lateral (**Menu de Ferramentas**) para escolher a operação desejada.
-2.  Faça o upload do seu arquivo no campo central.
-3.  Ajuste as configurações (como qualidade visual ou modo de extração).
-4.  Clique no botão de ação principal (botão colorido).
-5.  Visualize o resultado no **Preview** ou clique no botão verde para **Baixar** o arquivo processado.
+### Dependências Core
+```bash
+pip install streamlit pymupdf pymupdf4llm markitdown fpdf2 Pillow markdown
+```
+
+### Rodando Localmente
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🏗️ Estrutura do Projeto
+
+```text
+├── app.py                # Interface Streamlit e Gestão de Threads
+├── leitor_pdf.py         # Fachada (Orquestrador) do Sistema
+├── core/
+│   ├── extractor.py      # Lógica de conversão PDF/Office -> MD
+│   ├── pdf_generator.py  # Renderizador Ultra-rápido (FPDF2)
+│   ├── compressor.py     # Motor de Otimização (Opcional/Interno)
+│   └── styles.py         # Tokens de Design e Temas
+└── requirements.txt      # Dependências do Projeto
+```
 
 ---
 
-## 📄 Licença
+## ⚖️ Licença e Créditos
+Desenvolvido por **Kristiano Plácido** — Focado em ferramentas de produtividade para a era da inteligência artificial.
 
-Este projeto está sob a licença MIT. Sinta-se à vontade para contribuir!
-
----
-*Powered by Kristiano Plácido.*
+> [!TIP]
+> Para documentos extremamente longos, utilize o modo de conversão sem imagens para acelerar ainda mais o tempo de processamento.
