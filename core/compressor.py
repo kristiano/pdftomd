@@ -1,7 +1,7 @@
 import os
 import fitz
 import tempfile
-import shutil
+import time
 from pathlib import Path
 from typing import Optional, Literal, Tuple, Callable
 
@@ -25,50 +25,48 @@ class PDFOptimizer:
         self, 
         input_path: str, 
         method: Literal["simple", "raster"] = "simple",
-        progress_callback: Optional[Callable[[float, str], None]] = None
-    ) -> Tuple[bytes, float]:
+        progress_callback: Optional[Callable[[float, str], bool]] = None
+    ) -> Tuple[bytes, float, bool]:
         """
-        Comprime um PDF e retorna os bytes resultantes e a porcentagem de redução.
+        Comprime um PDF e retorna os bytes resultantes, a porcentagem de redução e se foi cancelado.
         """
         input_file = Path(input_path)
         if not input_file.exists():
             raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
 
         original_size = input_file.stat().st_size
+        was_cancelled = False
         
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_tmp = Path(tmp_dir) / "optimized.pdf"
             
             if method == "simple" or self.keep_text:
-                if progress_callback: progress_callback(0.2, "Analisando estrutura binária...")
+                if progress_callback: progress_callback(0.2, "Analizando estrutura binária...")
                 self._simple_compression(input_file, output_tmp)
                 if progress_callback: progress_callback(1.0, "Otimização concluída.")
             else:
-                self._raster_compression(input_file, output_tmp, progress_callback)
+                was_cancelled = self._raster_compression(input_file, output_tmp, progress_callback)
 
-            # Garantir que não ficou maior que o original
+            if was_cancelled:
+                return b"", 0.0, True
+
             final_size = output_tmp.stat().st_size
             if final_size > original_size:
                 with open(input_path, "rb") as f:
-                    return f.read(), 0.0
+                    return f.read(), 0.0, False
             
             reduction = (1 - final_size / original_size) * 100
             with open(output_tmp, "rb") as f:
-                return f.read(), reduction
+                return f.read(), reduction, False
 
     def _simple_compression(self, input_path: Path, output_path: Path):
-        """Otimização estrutural (remove objetos duplicados, limpa metadados inúteis)."""
+        """Otimização estrutural."""
         doc = fitz.open(str(input_path))
-        doc.save(
-            str(output_path),
-            garbage=4,
-            deflate=True,
-            clean=True
-        )
+        doc.save(str(output_path), garbage=4, deflate=True, clean=True)
         doc.close()
 
-    def _raster_compression(self, input_path: Path, output_path: Path, progress_callback: Optional[Callable] = None):
-        """Compressão por rasterização (converte páginas em imagens). Perde seleção de texto."""
+    def _raster_compression(self, input_path: Path, output_path: Path, progress_callback: Optional[Callable] = None) -> bool:
+        """Compressão por rasterização com suporte a cancelamento e concorrência (GIL yielding)."""
         doc = fitz.open(str(input_path))
         new_doc = fitz.open()
         
@@ -78,35 +76,23 @@ class PDFOptimizer:
         
         for i, page in enumerate(doc):
             if progress_callback:
-                progress_callback((i / total_pages), f"Otimizando página {i+1} de {total_pages}...")
+                if progress_callback((i / total_pages), f"Processando página {i+1} de {total_pages}"):
+                    new_doc.close(); doc.close()
+                    return True
             
-            # Renderizar página em alta qualidade para imagem
+            # --- TAREFA PESADA (CPU Bound) ---
             pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csRGB)
             img_data = pix.tobytes("jpeg", jpg_quality=self.quality)
-            
-            # Criar página com dimensões originais no novo PDF
             new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(page.rect, stream=img_data)
             
-            # Limpeza agressiva de memória para evitar travamento em arquivos grandes
-            pix = None
-            img_data = None
+            pix = None; img_data = None
             
-        if progress_callback: progress_callback(0.95, "Finalizando arquivo...")
-        new_doc.save(
-            str(output_path),
-            garbage=4,
-            deflate=True,
-            clean=True
-        )
-        new_doc.close()
-        doc.close()
-
-def format_size(size_bytes: int) -> str:
-    """Formata tamanho de arquivo em string legível."""
-    size = float(size_bytes)
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if size < 1024.0:
-            return f"{size:.2f} {unit}"
-        size /= 1024.0
-    return f"{size:.2f} TB"
+            # --- PONTO DE CONCORRÊNCIA (GIL YIELD) ---
+            # Pequeno intervalo para permitir que threads de outros usuários 
+            # (sessões do Streamlit) respirem e o servidor não trave globalmente.
+            time.sleep(0.01)
+            
+        new_doc.save(str(output_path), garbage=4, deflate=True, clean=True)
+        new_doc.close(); doc.close()
+        return False
