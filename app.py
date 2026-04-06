@@ -19,7 +19,11 @@ st.set_page_config(
 if 'engine' not in st.session_state:
     st.session_state.engine = Markdownify()
 
-# Design System: Clean Light Theme (ECharts Style)
+# Flags para controle de interrupção
+if 'stop_event' not in st.session_state:
+    st.session_state.stop_event = threading.Event()
+
+# Design System: ECharts Clean Light Theme
 design_system_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -54,13 +58,9 @@ div.stButton > button {
     font-size: 0.95rem !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
     border: none !important;
 }
 
-/* Botão Primário (Indigo) */
 div.stButton > button:not(.cancel-btn-style) {
     background-color: #4F46E5 !important;
     color: white !important;
@@ -71,7 +71,6 @@ div.stButton > button:not(.cancel-btn-style):hover {
     transform: translateY(-1px);
 }
 
-/* Botão Cancelar (Red / Ghost Style) */
 [data-testid="stVerticalBlock"] div.cancel-btn-container button {
     background-color: #FFFFFF !important;
     color: #EF4444 !important;
@@ -93,17 +92,31 @@ st.markdown(design_system_css, unsafe_allow_html=True)
 
 markdownify = st.session_state.engine
 
-# Helper Assíncrono com Telemetria
-def run_async(method, *args, **kwargs):
+# Helper Assíncrono com Telemetria e Interruptor por Evento
+def run_async(method, stop_event, *args, **kwargs):
     q = queue.Queue()
+    stop_event.clear() # Resetar sinal de parada
+    
     def wrapper():
         try:
-            def cb(p, t): q.put({"type": "p", "v": p, "t": t}); return False
+            def cb(p, t): 
+                # Enviar progresso para a fila
+                q.put({"type": "p", "v": p, "t": t})
+                # Retornar True se o sinal de stop for acionado para parar a engine
+                return stop_event.is_set()
+            
             kwargs["progress_callback"] = cb
             res = method(*args, **kwargs)
-            if isinstance(res, tuple): q.put({"type": "r", "val": res[0], "red": res[1], "c": res[2]})
-            else: q.put({"type": "r", "val": res})
-        except Exception as e: q.put({"type": "e", "m": str(e)})
+            
+            if stop_event.is_set():
+                q.put({"type": "c"}) # Confirmar cancelamento
+            elif isinstance(res, tuple):
+                q.put({"type": "r", "val": res[0], "red": res[1], "c": res[2]})
+            else:
+                q.put({"type": "r", "val": res})
+        except Exception as e:
+            q.put({"type": "e", "m": str(e)})
+    
     threading.Thread(target=wrapper, daemon=True).start()
     return q
 
@@ -111,15 +124,25 @@ def show_progress(q, start):
     p_ui = st.empty()
     while True:
         try:
-            msg = q.get(timeout=0.1)
+            msg = q.get(timeout=0.2)
             if msg["type"] == "p":
                 elap = time.time() - start
                 eta = int((elap / msg["v"]) - elap) if msg["v"] > 0.05 else 0
                 eta_txt = f"| Estimado: ~{eta}s" if eta > 0 else "| Finalizando..."
                 p_ui.progress(msg["v"], text=f"**{int(msg['v']*100)}%** • {msg['t']} {eta_txt}")
-            elif msg["type"] == "r": p_ui.empty(); return msg
-            elif msg["type"] == "e": p_ui.empty(); st.error(f"Erro: {msg['m']}"); return None
-        except queue.Empty: time.sleep(0.05)
+            elif msg["type"] == "r":
+                p_ui.empty()
+                return msg
+            elif msg["type"] == "c":
+                p_ui.empty()
+                st.warning("Operação interrompida pelo usuário.")
+                return None
+            elif msg["type"] == "e":
+                p_ui.empty()
+                st.error(f"Erro: {msg['m']}")
+                return None
+        except queue.Empty:
+            time.sleep(0.05)
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -134,10 +157,10 @@ with st.sidebar:
     st.divider()
     selected = st.selectbox("Ferramenta", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], index=0)
     st.divider()
-    
+
 # --- CONTENT ---
 st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Extração e otimização de alta performance em tempo real.</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Extração e otimização inteligente para o futuro da IA.</p>', unsafe_allow_html=True)
 
 if selected == "📦 Converter Documentos":
     with st.container(border=True):
@@ -149,34 +172,30 @@ if selected == "📦 Converter Documentos":
             with c2: mode = st.toggle("Imagens", value=True)
             
             col_b1, col_b2 = st.columns([2, 1])
-            with col_b1: btn_run = st.button("🚀 Iniciar Conversão Inteligente")
+            with col_b1: btn_run = st.button("🚀 Iniciar Conversão")
             with col_b2:
                 st.markdown('<div class="cancel-btn-container">', unsafe_allow_html=True)
-                btn_cancel = st.button("❌ Cancelar", key="cancel_conv")
+                if st.button("❌ Cancelar", key="cancel_conv"):
+                    st.session_state.stop_event.set()
+                    st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
-                if btn_cancel: st.rerun()
             
             if btn_run:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.name.split('.')[-1]}") as tmp:
                     tmp.write(file.getvalue()); tp = tmp.name
                 try:
-                    res = show_progress(run_async(markdownify.from_file, tp, embed_images=mode), time.time())
-                    if res:
-                        st.success("Documento extraído com sucesso!")
-                        # DOWNLOAD E PRE-VISUALIZACAO
+                    res = show_progress(run_async(markdownify.from_file, st.session_state.stop_event, tp, embed_images=mode), time.time())
+                    if res and "val" in res:
+                        st.success("Documento extraído!")
                         st.download_button("📥 Baixar Arquivo .md", res["val"], file_name=f"{os.path.splitext(file.name)[0]}.md")
-                        
-                        st.divider()
-                        st.markdown("### 👀 Pré-visualização do Conteúdo")
-                        with st.expander("Expandir conteúdo convertido", expanded=True):
+                        with st.expander("👀 Pré-visualização", expanded=True):
                             st.markdown(res["val"], unsafe_allow_html=True)
                 finally:
                     if os.path.exists(tp): os.remove(tp)
 
 elif selected == "⚡ Otimizar PDFs":
-    # Manteve-se o bloco ja funcional
     with st.container(border=True):
-        st.subheader("Otimização Inteligente")
+        st.subheader("Otimização de PDF")
         file_opt = st.file_uploader("PDF", type=["pdf"], key="uploader_opt", label_visibility="collapsed")
         if file_opt:
             orig = file_opt.getvalue()
@@ -188,24 +207,25 @@ elif selected == "⚡ Otimizar PDFs":
                 dpi = st.select_slider("Resol.", options=[72, 100, 150, 200, 300], value=150) if "Agressiva" in strat else 150
             
             col_b1, col_b2 = st.columns([2, 1])
-            with col_b1: btn_run = st.button("⚡ Executar Otimização")
+            with col_b1: btn_run = st.button("⚡ Otimizar")
             with col_b2:
                 st.markdown('<div class="cancel-btn-container">', unsafe_allow_html=True)
-                btn_cancel = st.button("❌ Cancelar", key="cancel_opt")
+                if st.button("❌ Cancelar", key="cancel_opt"):
+                    st.session_state.stop_event.set()
+                    st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
-                if btn_cancel: st.rerun()
             
             if btn_run:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                     tmp.write(orig); tp = tmp.name
                 try:
                     m = "simple" if "Simples" in strat else "raster"
-                    res = show_progress(run_async(markdownify.optimize_pdf, tp, method=m, quality=qual, dpi=dpi), time.time())
-                    if res and not res["c"]:
+                    res = show_progress(run_async(markdownify.optimize_pdf, st.session_state.stop_event, tp, method=m, quality=qual, dpi=dpi), time.time())
+                    if res and not res.get("c", False):
                         st.markdown(f"""<div class="metrics-grid">
-                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0; text-transform:uppercase;">Original</p><p class="pro-metric-val">{format_size(len(orig))}</p></div>
-                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0; text-transform:uppercase;">Otimizado</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
-                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0; text-transform:uppercase;">Redução</p><p class="pro-metric-val" style="color:#10B981;">{res['red']:.1f}%</p></div>
+                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0;">ORIGINAL</p><p class="pro-metric-val">{format_size(len(orig))}</p></div>
+                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0;">OTIMIZADO</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
+                            <div class="pro-metric"><p style="font-size:0.75rem; color:#64748B; margin:0;">ECONOMIA</p><p class="pro-metric-val" style="color:#10B981;">{res['red']:.1f}%</p></div>
                         </div>""", unsafe_allow_html=True)
                         st.download_button("📥 Baixar PDF Otimizado", res["val"], file_name=f"{os.path.splitext(file_opt.name)[0]}_opt.pdf")
                 finally:
@@ -217,17 +237,18 @@ elif selected == "📄 Markdown para PDF":
         file_md = st.file_uploader("Arquivo .md", type=["md", "markdown", "txt"], label_visibility="collapsed")
         if file_md:
             col_b1, col_b2 = st.columns([2, 1])
-            with col_b1: btn_run = st.button("📄 Gerar PDF Renderizado")
+            with col_b1: btn_run = st.button("📄 Gerar PDF")
             with col_b2:
                 st.markdown('<div class="cancel-btn-container">', unsafe_allow_html=True)
-                btn_cancel = st.button("❌ Cancelar", key="cancel_md")
+                if st.button("❌ Cancelar", key="cancel_md"):
+                    st.session_state.stop_event.set()
+                    st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
-                if btn_cancel: st.rerun()
             
             if btn_run:
                 try:
                     text = file_md.getvalue().decode("utf-8")
-                    res = show_progress(run_async(markdownify.to_pdf, text), time.time())
+                    res = show_progress(run_async(markdownify.to_pdf, st.session_state.stop_event, text), time.time())
                     if res: st.success("Pronto!"); st.download_button("📥 Baixar PDF", res["val"], file_name="renderizado.pdf")
                 except Exception as e: st.error(f"Erro: {e}")
 
