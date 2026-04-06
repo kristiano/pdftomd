@@ -47,7 +47,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #1E293B !i
 [data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #E2E8F0 !important;
     border-radius: 16px !important;
-    padding: 2rem !important;
+    padding: 2.5rem !important;
     background-color: #FFFFFF !important;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04) !important;
 }
@@ -78,9 +78,9 @@ div[data-testid="stButton"] button[aria-label*="Cancelar"]:hover {
 }
 
 /* Metrics */
-.metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
-.pro-metric { padding: 1.2rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; text-align: center; }
-.pro-metric-val { font-size: 1.5rem; font-weight: 800; color: #4F46E5; }
+.metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0; }
+.pro-metric { padding: 1.5rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; text-align: center; }
+.pro-metric-val { font-size: 1.8rem; font-weight: 800; color: #4F46E5; }
 
 div[data-testid="stDownloadButton"] > button { background-color: #10B981 !important; color: white !important; border: none !important; }
 </style>
@@ -89,7 +89,7 @@ st.markdown(design_system_css, unsafe_allow_html=True)
 
 markdownify = st.session_state.engine
 
-# Helper Assíncrono com correção de conflito de nomes (task_func em vez de method)
+# Helper Assíncrono
 def run_async(task_func, stop_event, *args, **kwargs):
     q = queue.Queue()
     stop_event.clear()
@@ -99,7 +99,6 @@ def run_async(task_func, stop_event, *args, **kwargs):
                 q.put({"type": "p", "v": p, "t": t})
                 return stop_event.is_set()
             kwargs["progress_callback"] = cb
-            # Executa a tarefa (Ex: optimize_pdf que tem um parâmetro 'method')
             res = task_func(*args, **kwargs)
             if stop_event.is_set(): q.put({"type": "c"})
             elif isinstance(res, tuple): q.put({"type": "r", "val": res[0], "red": res[1], "c": res[2]})
@@ -131,11 +130,11 @@ with st.sidebar:
 
 # --- CONTENT ---
 st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Processamento e otimização inteligente.</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Gestão profissional com interrupção instantânea.</p>', unsafe_allow_html=True)
 
 if selected == "📦 Converter Documentos":
     with st.container(border=True):
-        st.subheader("Extração")
+        st.subheader("Extração de Dados")
         file = st.file_uploader("Arquivo", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], label_visibility="collapsed")
         if file:
             c1, c2 = st.columns([3, 1])
@@ -157,35 +156,43 @@ if selected == "📦 Converter Documentos":
 
 elif selected == "⚡ Otimizar PDFs":
     with st.container(border=True):
-        st.subheader("Otimização")
+        st.subheader("Otimização de PDF")
         file_o = st.file_uploader("PDF", type=["pdf"], key="opt_up", label_visibility="collapsed")
         if file_o:
             obytes = file_o.getvalue()
-            st.info(f"**{file_o.name}** ({format_size(len(obytes))})")
-            co1, co2 = st.columns(2)
-            with co1: st_mode = st.selectbox("Estratégia", ["Simples", "Agressiva"])
-            with co2:
-                q_val = st.slider("Qualidade", 10, 100, 85)
-                d_val = st.select_slider("Resol.", options=[72, 100, 150, 200, 300], value=150) if "Agres" in st_mode else 150
-            col_b1, col_b2 = st.columns([2, 1])
-            run_btn = col_b1.button("⚡ Executar Otimização", type="primary", use_container_width=True)
-            col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
-            if run_btn:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                    tmp.write(obytes); tp = tmp.name
-                try:
-                    target_method = "simple" if "Simp" in st_mode else "raster"
-                    # PASSANDO 'method' como kwarg agora não conflita com 'task_func'
-                    res = show_progress(run_async(markdownify.optimize_pdf, st.session_state.stop_event, tp, method=target_method, quality=q_val, dpi=d_val), time.time())
-                    if res and not res.get("c", False):
-                        st.markdown(f"""<div class="metrics-grid">
-                            <div class="pro-metric"><p style="font-size:0.6rem; margin:0;">ORIGINAL</p><p class="pro-metric-val">{format_size(len(obytes))}</p></div>
-                            <div class="pro-metric"><p style="font-size:0.6rem; margin:0;">OTIMIZADO</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
-                            <div class="pro-metric"><p style="font-size:0.6rem; margin:0;">REDUÇÃO</p><p class="pro-metric-val" style="color:#10B981;">{res['red']:.1f}%</p></div>
-                        </div>""", unsafe_allow_html=True)
-                        st.download_button("📥 Baixar PDF", res["val"], file_name="otimizado.pdf")
-                finally:
-                    if os.path.exists(tp): os.remove(tp)
+            size_mb = len(obytes) / (1024 * 1024)
+            
+            # BLOQUEIO DE ARQUIVOS ACIMA DE 30MB
+            if size_mb > 30:
+                st.error(f"O arquivo enviado possui **{size_mb:.1f}MB**. Para garantir a estabilidade do servidor gratuito, o limite máximo para otimização é de **30MB**.")
+                st.info("💡 Dica: Tente otimizar arquivos menores ou divida o PDF em partes.")
+            else:
+                st.info(f"**{file_o.name}** ({format_size(len(obytes))})")
+                co1, co2 = st.columns(2)
+                with co1: st_mode = st.selectbox("Estratégia", ["Simples", "Agressiva"])
+                with co2:
+                    q_val = st.slider("Qualidade", 10, 100, 85)
+                    d_val = st.select_slider("Resol.", options=[72, 100, 150, 200, 300], value=150) if "Agres" in st_mode else 150
+                
+                col_b1, col_b2 = st.columns([2, 1])
+                run_btn = col_b1.button("⚡ Executar Otimização", type="primary", use_container_width=True)
+                col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
+                
+                if run_btn:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                        tmp.write(obytes); tp = tmp.name
+                    try:
+                        target_method = "simple" if "Simp" in st_mode else "raster"
+                        res = show_progress(run_async(markdownify.optimize_pdf, st.session_state.stop_event, tp, method=target_method, quality=q_val, dpi=d_val), time.time())
+                        if res and not res.get("c", False):
+                            st.markdown(f"""<div class="metrics-grid">
+                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">ORIGINAL</p><p class="pro-metric-val">{format_size(len(orig))}</p></div>
+                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">REDUZIDO</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
+                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">ECONOMIA</p><p class="pro-metric-val" style="color:#10B981;">{res['red']:.1f}%</p></div>
+                            </div>""", unsafe_allow_html=True)
+                            st.download_button("📥 Baixar PDF", res["val"], file_name="otimizado.pdf")
+                    finally:
+                        if os.path.exists(tp): os.remove(tp)
 
 elif selected == "📄 Markdown para PDF":
     with st.container(border=True):
