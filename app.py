@@ -134,8 +134,7 @@ with st.sidebar:
     st.divider()
     selected = st.selectbox("Ferramenta", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], index=0)
     st.divider()
-    st.markdown("""<div style="padding: 12px; border-radius: 10px; background-color: #FFFFFF; border: 1px solid #E2E8F0;"><p style="font-size: 0.7rem; color: #64748B; font-weight: 600;">KRISTIANO PLÁCIDO</p></div>""", unsafe_allow_html=True)
-
+    
 # --- CONTENT ---
 st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Extração e otimização de alta performance em tempo real.</p>', unsafe_allow_html=True)
