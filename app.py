@@ -139,7 +139,7 @@ opcao = st.sidebar.radio(
 )
 
 st.sidebar.divider()
-st.sidebar.caption("v2.1 - Powered by PyMuPDF & WeasyPrint")
+st.sidebar.caption("v2.5 - desenvolvido por Kristiano Plácido")
 
 if opcao == "Extrair para Markdown":
     st.subheader("📄 Extrair Markdown de um Documento")
