@@ -3,7 +3,7 @@ import fitz
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Callable
 
 class PDFOptimizer:
     """
@@ -24,7 +24,8 @@ class PDFOptimizer:
     def compress(
         self, 
         input_path: str, 
-        method: Literal["simple", "raster"] = "simple"
+        method: Literal["simple", "raster"] = "simple",
+        progress_callback: Optional[Callable[[float, str], None]] = None
     ) -> Tuple[bytes, float]:
         """
         Comprime um PDF e retorna os bytes resultantes e a porcentagem de redução.
@@ -39,14 +40,15 @@ class PDFOptimizer:
             output_tmp = Path(tmp_dir) / "optimized.pdf"
             
             if method == "simple" or self.keep_text:
+                if progress_callback: progress_callback(0.2, "Analisando estrutura binária...")
                 self._simple_compression(input_file, output_tmp)
+                if progress_callback: progress_callback(1.0, "Otimização concluída.")
             else:
-                self._raster_compression(input_file, output_tmp)
+                self._raster_compression(input_file, output_tmp, progress_callback)
 
             # Garantir que não ficou maior que o original
             final_size = output_tmp.stat().st_size
             if final_size > original_size:
-                # Se ficou maior, retornamos o original original
                 with open(input_path, "rb") as f:
                     return f.read(), 0.0
             
@@ -65,22 +67,32 @@ class PDFOptimizer:
         )
         doc.close()
 
-    def _raster_compression(self, input_path: Path, output_path: Path):
+    def _raster_compression(self, input_path: Path, output_path: Path, progress_callback: Optional[Callable] = None):
         """Compressão por rasterização (converte páginas em imagens). Perde seleção de texto."""
         doc = fitz.open(str(input_path))
         new_doc = fitz.open()
         
+        total_pages = len(doc)
         scale = self.raster_dpi / 72
         matrix = fitz.Matrix(scale, scale)
         
-        for page in doc:
+        for i, page in enumerate(doc):
+            if progress_callback:
+                progress_callback((i / total_pages), f"Otimizando página {i+1} de {total_pages}...")
+            
+            # Renderizar página em alta qualidade para imagem
             pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csRGB)
             img_data = pix.tobytes("jpeg", jpg_quality=self.quality)
             
-            # Criar página com dimensões originais
+            # Criar página com dimensões originais no novo PDF
             new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(page.rect, stream=img_data)
             
+            # Limpeza agressiva de memória para evitar travamento em arquivos grandes
+            pix = None
+            img_data = None
+            
+        if progress_callback: progress_callback(0.95, "Finalizando arquivo...")
         new_doc.save(
             str(output_path),
             garbage=4,
@@ -92,8 +104,9 @@ class PDFOptimizer:
 
 def format_size(size_bytes: int) -> str:
     """Formata tamanho de arquivo em string legível."""
+    size = float(size_bytes)
     for unit in ['B', 'KB', 'MB', 'GB']:
-        if size_bytes < 1024.0:
-            return f"{size_bytes:.2f} {unit}"
-        size_bytes /= 1024.0
-    return f"{size_bytes:.2f} TB"
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} TB"

@@ -4,6 +4,7 @@ from core import (
     generate_pdf_from_markdown,
     PDFOptimizer
 )
+from typing import Optional, Callable
 
 class Markdownify:
     """
@@ -26,7 +27,7 @@ class Markdownify:
         """Transfere o processamento de renderização WeasyPrint para o motor de PDF isolado."""
         return generate_pdf_from_markdown(markdown_text)
 
-    def optimize_pdf(self, file_path: str, method: str = "simple", quality: int = 85, dpi: int = 150) -> tuple:
+    def optimize_pdf(self, file_path: str, method: str = "simple", quality: int = 85, dpi: int = 150, progress_callback: Optional[Callable] = None) -> tuple:
         """Otimiza um arquivo PDF reduzindo seu tamanho."""
         optimizer = PDFOptimizer(quality=quality, raster_dpi=dpi)
-        return optimizer.compress(file_path, method=method)
+        return optimizer.compress(file_path, method=method, progress_callback=progress_callback)
