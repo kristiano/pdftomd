@@ -59,12 +59,12 @@ div.stButton > button {
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
     width: 100% !important;
+    border: none !important;
 }
 
 div.stButton > button:not([aria-label*="Cancelar"]) {
     background-color: #4F46E5 !important;
     color: white !important;
-    border: none !important;
 }
 
 div[data-testid="stButton"] button[aria-label*="Cancelar"] {
@@ -72,17 +72,12 @@ div[data-testid="stButton"] button[aria-label*="Cancelar"] {
     color: #EF4444 !important;
     border: 1px solid #FECACA !important;
 }
-div[data-testid="stButton"] button[aria-label*="Cancelar"]:hover {
-    background-color: #FEF2F2 !important;
-    border-color: #EF4444 !important;
-}
 
-/* Metrics */
 .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0; }
 .pro-metric { padding: 1.5rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; text-align: center; }
 .pro-metric-val { font-size: 1.8rem; font-weight: 800; color: #4F46E5; }
 
-div[data-testid="stDownloadButton"] > button { background-color: #10B981 !important; color: white !important; border: none !important; }
+div[data-testid="stDownloadButton"] > button { background-color: #10B981 !important; color: white !important; }
 </style>
 """
 st.markdown(design_system_css, unsafe_allow_html=True)
@@ -125,27 +120,25 @@ def show_progress(q, start):
 with st.sidebar:
     st.markdown("## Canivete Suíço")
     st.divider()
-    selected = st.selectbox("Operação", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], label_visibility="collapsed")
+    selected = st.selectbox("Ferramenta", ["📦 Converter Documentos", "⚡ Otimizar PDFs", "📄 Markdown para PDF"], label_visibility="collapsed")
     st.divider()
 
 # --- CONTENT ---
 st.markdown('<p class="main-title">A Inteligência em Documentos.</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Gestão profissional com interrupção instantânea.</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Gestão e otimização para o futuro da IA.</p>', unsafe_allow_html=True)
 
 if selected == "📦 Converter Documentos":
     with st.container(border=True):
-        st.subheader("Extração de Dados")
-        file = st.file_uploader("Arquivo", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], label_visibility="collapsed")
+        st.subheader("Extração")
+        file = st.file_uploader("Upload", type=["pdf", "docx", "doc", "xlsx", "pptx", "html"], label_visibility="collapsed")
         if file:
-            c1, c2 = st.columns([3, 1])
-            with c1: st.info(f"**{file.name}** ({format_size(len(file.getvalue()))})")
-            with c2: img_on = st.toggle("Imagens", value=True)
+            fb = file.getvalue()
+            st.info(f"**{file.name}** ({format_size(len(fb))})")
+            img_on = st.toggle("Imagens", value=True)
             col_b1, col_b2 = st.columns([2, 1])
-            run_btn = col_b1.button("🚀 Iniciar Conversão", type="primary", use_container_width=True)
-            col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
-            if run_btn:
+            if col_b1.button("🚀 Iniciar", type="primary", use_container_width=True):
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.name.split('.')[-1]}") as tmp:
-                    tmp.write(file.getvalue()); tp = tmp.name
+                    tmp.write(fb); tp = tmp.name
                 try:
                     res = show_progress(run_async(markdownify.from_file, st.session_state.stop_event, tp, embed_images=img_on), time.time())
                     if res:
@@ -153,46 +146,41 @@ if selected == "📦 Converter Documentos":
                         with st.expander("👀 Preview", expanded=True): st.markdown(res["val"], unsafe_allow_html=True)
                 finally:
                     if os.path.exists(tp): os.remove(tp)
+            col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
 
 elif selected == "⚡ Otimizar PDFs":
     with st.container(border=True):
-        st.subheader("Otimização de PDF")
+        st.subheader("Otimização")
         file_o = st.file_uploader("PDF", type=["pdf"], key="opt_up", label_visibility="collapsed")
         if file_o:
-            obytes = file_o.getvalue()
-            size_mb = len(obytes) / (1024 * 1024)
-            
-            # BLOQUEIO DE ARQUIVOS ACIMA DE 30MB
+            ob = file_o.getvalue() # Armazenamos os bytes original em 'ob' (obytes)
+            size_mb = len(ob) / (1024 * 1024)
             if size_mb > 30:
-                st.error(f"O arquivo enviado possui **{size_mb:.1f}MB**. Para garantir a estabilidade do servidor gratuito, o limite máximo para otimização é de **30MB**.")
-                st.info("💡 Dica: Tente otimizar arquivos menores ou divida o PDF em partes.")
+                st.error(f"Arquivo de **{size_mb:.1f}MB** excede o limite estável de 30MB.")
             else:
-                st.info(f"**{file_o.name}** ({format_size(len(obytes))})")
+                st.info(f"**{file_o.name}** ({format_size(len(ob))})")
                 co1, co2 = st.columns(2)
                 with co1: st_mode = st.selectbox("Estratégia", ["Simples", "Agressiva"])
                 with co2:
                     q_val = st.slider("Qualidade", 10, 100, 85)
                     d_val = st.select_slider("Resol.", options=[72, 100, 150, 200, 300], value=150) if "Agres" in st_mode else 150
-                
                 col_b1, col_b2 = st.columns([2, 1])
-                run_btn = col_b1.button("⚡ Executar Otimização", type="primary", use_container_width=True)
-                col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
-                
-                if run_btn:
+                if col_b1.button("⚡ Otimizar", type="primary", use_container_width=True):
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                        tmp.write(obytes); tp = tmp.name
+                        tmp.write(ob); tp = tmp.name
                     try:
-                        target_method = "simple" if "Simp" in st_mode else "raster"
-                        res = show_progress(run_async(markdownify.optimize_pdf, st.session_state.stop_event, tp, method=target_method, quality=q_val, dpi=d_val), time.time())
+                        m = "simple" if "Simp" in st_mode else "raster"
+                        res = show_progress(run_async(markdownify.optimize_pdf, st.session_state.stop_event, tp, method=m, quality=q_val, dpi=d_val), time.time())
                         if res and not res.get("c", False):
                             st.markdown(f"""<div class="metrics-grid">
-                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">ORIGINAL</p><p class="pro-metric-val">{format_size(len(orig))}</p></div>
-                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">REDUZIDO</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
+                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">ORIGINAL</p><p class="pro-metric-val">{format_size(len(ob))}</p></div>
+                                <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">OTIMIZADO</p><p class="pro-metric-val">{format_size(len(res['val']))}</p></div>
                                 <div class="pro-metric"><p style="font-size:0.7rem; color:#64748B; margin:0;">ECONOMIA</p><p class="pro-metric-val" style="color:#10B981;">{res['red']:.1f}%</p></div>
                             </div>""", unsafe_allow_html=True)
-                            st.download_button("📥 Baixar PDF", res["val"], file_name="otimizado.pdf")
+                            st.download_button("📥 Download PDF", res["val"], file_name="otimizado.pdf")
                     finally:
                         if os.path.exists(tp): os.remove(tp)
+                col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
 
 elif selected == "📄 Markdown para PDF":
     with st.container(border=True):
@@ -200,14 +188,13 @@ elif selected == "📄 Markdown para PDF":
         file_m = st.file_uploader("Markdown", type=["md", "txt"], label_visibility="collapsed")
         if file_m:
             col_b1, col_b2 = st.columns([2, 1])
-            run_btn = col_b1.button("📄 Gerar PDF", type="primary", use_container_width=True)
-            col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
-            if run_btn:
+            if col_b1.button("📄 Gerar PDF", type="primary", use_container_width=True):
                 try:
                     txt = file_m.getvalue().decode("utf-8")
                     res = show_progress(run_async(markdownify.to_pdf, st.session_state.stop_event, txt), time.time())
-                    if res: st.success("Pronto!"); st.download_button("📥 Baixar .pdf", res["val"], file_name="doc.pdf")
+                    if res: st.success("Pronto!"); st.download_button("📥 Download .pdf", res["val"], file_name="doc.pdf")
                 except Exception as e: st.error(f"Erro: {e}")
+            col_b2.button("❌ Cancelar", on_click=on_cancel, use_container_width=True)
 
 st.divider()
 st.caption("© 2024 canivete suíço - 2.5v")
