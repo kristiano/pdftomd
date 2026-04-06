@@ -1,65 +1,46 @@
-# 📄 Canivete Suíço para Documentos — v2.8 (Expert)
+# Conversor de PDF para Markdown
 
-O **Canivete Suíço Master** é uma aplicação Streamlit de alta performance projetada para converter, extrair e renderizar documentos com precisão industrial e velocidade extrema. Inspirado nos melhores servidores MCP (*Model Context Protocol*), este projeto utiliza uma arquitetura assíncrona para garantir uma experiência de usuário fluida e sem travamentos.
+Aplicativo web funcional construído em [Streamlit](https://streamlit.io/) para a leitura de arquivos PDF e conversão automática do seu texto em formato Markdown (`.md`).
+Ele utiliza a biblioteca subjacente `pymupdf4llm` para realizar uma extração de texto em alta fidelidade voltada para documentação em geral ou para uso direto em modelos de linguagem (LLMs).
 
----
+## 🚀 Como funciona
 
-## 🚀 Funcionalidades Principais
+Acesse a interface, clique em **Browse files** e faça o upload de um documento PDF. O sistema salva o arquivo localmente de maneira temporária, aciona o script subjacente para efetuar a leitura com `pymupdf` e disponibiliza para o usuário um botão para baixar o retorno `.md`.
 
-### 📦 1. Conversor Universal para Markdown
-Extraia conteúdo de quase qualquer formato para Markdown limpo, ideal para uso em LLMs (ChatGPT, Claude, etc.).
-- **PDF Inteligente**: Utiliza `pymupdf4llm` para extrair texto, tabelas e preservar a estrutura original.
-- **Office & Docs**: Suporte nativo para Word (.docx), Excel (.xlsx), PowerPoint (.pptx) e HTML via motor **MarkItDown** (Microsoft).
-- **Gestão de Imagens**: Opção para embutir imagens diretamente no Markdown via Base64 ou remover ruídos visuais.
+## ⚙️ Instalação
 
-### 📄 2. Renderizador Master (Markdown para PDF)
-Transforme textos Markdown em documentos PDF profissionais com velocidade 20x superior à média.
-- **Motor FPDF2**: Substitui motores lentos (como WeasyPrint) por um sistema de renderização nativa de alta performance.
-- **Design ECharts**: Estética baseada em Slate/Indigo, com suporte a alertas GFM (Nota, Dica, Importante, Aviso).
-- **Tipografia Moderna**: Renderização limpa de cabeçalhos, listas e imagens embutidas.
+Pré-requisito: Python 3 instalado na sua máquina.
 
----
-
-## 🛠️ Diferenciais Técnicos (Arquitetura Expert)
-
-- **Concorrência Assíncrona**: Todas as tarefas pesadas rodam em *Background Threads* com filas de comunicação (`queue`), permitindo que múltiplos usuários utilizem o app sem bloqueios.
-- **Telemetria em Tempo Real**: Barra de progresso granular com cálculo de porcentagem (%) e **ETA (Tempo Estimado)** dinâmico.
-- **Interrupção Prioritária**: Botão "Cancelar" em todas as ferramentas que utiliza sinalização de thread para interromper processos instantaneamente, economizando recursos do servidor.
-- **UI/UX Premium**: Design baseado em HSL personalizado, modo clean com sidebar persistente e componentes responsivos.
-
----
-
-## 💻 Instalação e Uso
-
-### Dependências Core
+1. Clone esse repositório:
 ```bash
-pip install streamlit pymupdf pymupdf4llm markitdown fpdf2 Pillow markdown
+git clone https://github.com/SEU-USUARIO/NOME-DO-REPOSITORIO.git
+cd "NOME-DO-REPOSITORIO"
 ```
 
-### Rodando Localmente
+2. Crie um ambiente virtual (recomendado):
+```bash
+python -m venv venv
+```
+
+3. Ative o ambiente virtual:
+- Mac/Linux:
+```bash
+source venv/bin/activate
+```
+- Windows:
+```bash
+venv\Scripts\activate
+```
+
+4. Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
+
+## ▶️ Executando a Aplicação
+
+Inicie o servidor do Streamlit:
 ```bash
 streamlit run app.py
 ```
-
----
-
-## 🏗️ Estrutura do Projeto
-
-```text
-├── app.py                # Interface Streamlit e Gestão de Threads
-├── leitor_pdf.py         # Fachada (Orquestrador) do Sistema
-├── core/
-│   ├── extractor.py      # Lógica de conversão PDF/Office -> MD
-│   ├── pdf_generator.py  # Renderizador Ultra-rápido (FPDF2)
-│   ├── compressor.py     # Motor de Otimização (Opcional/Interno)
-│   └── styles.py         # Tokens de Design e Temas
-└── requirements.txt      # Dependências do Projeto
-```
-
----
-
-## ⚖️ Licença e Créditos
-Desenvolvido por **Kristiano Plácido** — Focado em ferramentas de produtividade para a era da inteligência artificial.
-
-> [!TIP]
-> Para documentos extremamente longos, utilize o modo de conversão sem imagens para acelerar ainda mais o tempo de processamento.
+O navegador abrirá automaticamente em `http://localhost:8501`.
