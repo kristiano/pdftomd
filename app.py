@@ -210,4 +210,4 @@ elif selected == "📄 Markdown para PDF":
                 except Exception as e: st.error(f"Erro: {e}")
 
 st.divider()
-st.caption("© 2024 canivete suíço - Kristiano Plácido")
+st.caption("© 2024 canivete suíço - 2.5v")
